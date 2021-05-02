@@ -1,21 +1,34 @@
 import time
+import sys
 from random import randrange
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 from notification.sms import SMSNotify
+
+# Give selenium image time to load up
+if sys.argv[1] == "remote":
+    time.sleep(3)
 
 
 class ShoppingBot:
     def __init__(self):
         self.refresh_timer = randrange(3, 9)
         chrome_options = Options()
-        chrome_options.add_experimental_option("detach", True)
-        self.driver = webdriver.Chrome(options=chrome_options)
-        # self.driver.get("https://www.target.com/p/playstation-5-console/-/A-81114595#lnk=sametab")
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        if sys.argv[1] == "remote":
+            self.driver = webdriver.Remote("http://selenium:4444/wd/hub",
+                                           desired_capabilities=DesiredCapabilities.CHROME,
+                                           options=chrome_options)
+        else:
+            self.driver = webdriver.Chrome(options=chrome_options)
+        self.store = "Target"
+        self.driver.get("https://www.target.com/p/playstation-5-console/-/A-81114595#lnk=sametab")
         # self.driver.get("https://www.target.com/p/dualsense-wireless-controller-for-playstation-5/-/A-81114477")
-        self.driver.get("https://www.target.com/p/xbox-gift-card-digital/-/A-53054514?preselect=52567882#lnk=sametab")
+        # self.driver.get("https://www.target.com/p/xbox-gift-card-digital/-/A-53054514?preselect=52567882#lnk=sametab")
 
     def checkout(self):
         self.driver.get("https://www.target.com/co-cart")
@@ -55,18 +68,25 @@ class ShoppingBot:
 
 if __name__ == "__main__":
     shopping_bot = ShoppingBot()
+    sms = SMSNotify()
+
     found_item = False
-    while not found_item:
-        if shopping_bot.refresh_timer <= 0:
-            shopping_bot.reset_timer()
-        if shopping_bot.add_to_cart():
-            found_item = True
-            sms = SMSNotify()
-            # sms.message("Target")
-            print("Added to cart!")
-            break
-        shopping_bot.refresh_timer -= 1
-        shopping_bot.wait()
+    try:
+        while not found_item:
+            if shopping_bot.refresh_timer <= 0:
+                shopping_bot.reset_timer()
+            if shopping_bot.add_to_cart():
+                found_item = True
+                sms.message(shopping_bot.store)
+                print("Added to cart!")
+                break
+            shopping_bot.refresh_timer -= 1
+            shopping_bot.wait()
+    # Any issues happen to shopping bot.
+    except:
+        sms.message(shopping_bot.store, error=True)
+        print("Shopping bot had an error.")
     shopping_bot.checkout()
 
-    time.sleep(2000)
+    # Leave time to manually finish transaction if successful
+    time.sleep(3600)

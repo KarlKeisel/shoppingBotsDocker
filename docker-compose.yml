@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  selenium:
+    image: selenium/standalone-chrome:90.0
+    ports:
+    - 4444:4444
+    - 7900:7900
+    restart: always
+
+  bestbuy:
+    build:
+      context: ./main
+    command: sh -c "python bestbuy.py remote"
+    depends_on:
+      - selenium
+
+  target:
+    build:
+      context: ./main
+    command: sh -c "python target.py remote"
+    depends_on:
+      - selenium

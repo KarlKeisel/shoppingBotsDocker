@@ -1,27 +1,30 @@
 import time
+import sys
 from random import randrange
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from pyvirtualdisplay import Display
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 from notification.sms import SMSNotify
+
+# Give selenium image time to load up
+if sys.argv[1] == "remote":
+    time.sleep(3)
 
 
 class ShoppingBot:
     def __init__(self):
         self.refresh_timer = randrange(3, 9)
-        display = Display(visible=True, size=(800, 800))
-        display.start()
         chrome_options = Options()
-        chrome_options.add_argument("--no-sandbox")
-        service_log_path = "{}/chromedriver.log".format(".")
-        service_args = ['--verbose']
-        chrome_options.add_experimental_option("detach", True)
-        self.driver = webdriver.Chrome("../usr/local/bin/chromedriver",
-                                       options=chrome_options,
-                                       service_args=service_args,
-                                       service_log_path=service_log_path)
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        if sys.argv[1] == "remote":
+            self.driver = webdriver.Remote("http://selenium:4444/wd/hub",
+                                           desired_capabilities=DesiredCapabilities.CHROME,
+                                           options=chrome_options)
+        else:
+            self.driver = webdriver.Chrome(options=chrome_options)
         self.store = "Best Buy"
         self.driver.get("https://www.bestbuy.com/site/sony-playstation-5-console/6426149.p?skuId=6426149")
 
