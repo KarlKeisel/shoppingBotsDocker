@@ -3,6 +3,7 @@ from random import randrange
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from pyvirtualdisplay import Display
 
 from notification.sms import SMSNotify
 
@@ -10,9 +11,17 @@ from notification.sms import SMSNotify
 class ShoppingBot:
     def __init__(self):
         self.refresh_timer = randrange(3, 9)
+        display = Display(visible=True, size=(800, 800))
+        display.start()
         chrome_options = Options()
+        chrome_options.add_argument("--no-sandbox")
+        service_log_path = "{}/chromedriver.log".format(".")
+        service_args = ['--verbose']
         chrome_options.add_experimental_option("detach", True)
-        self.driver = webdriver.Chrome(options=chrome_options)
+        self.driver = webdriver.Chrome("../usr/local/bin/chromedriver",
+                                       options=chrome_options,
+                                       service_args=service_args,
+                                       service_log_path=service_log_path)
         self.store = "Best Buy"
         self.driver.get("https://www.bestbuy.com/site/sony-playstation-5-console/6426149.p?skuId=6426149")
 
